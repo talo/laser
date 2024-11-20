@@ -32,6 +32,12 @@ pub fn when<Cond>(cond: Cond) -> When<Cond> {
     When { cond }
 }
 
+pub struct Empty;
+
+impl PushPrql for Empty {
+    fn push_to_driver(&self, _driver: &mut crate::driver::Driver) {}
+}
+
 pub struct Add<LHS, RHS> {
     pub lhs: LHS,
     pub rhs: RHS,

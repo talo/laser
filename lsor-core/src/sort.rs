@@ -6,8 +6,15 @@ use crate::{
     cursor::{Cursor, Iterable},
     driver::{Driver, PushPrql},
     take::Taken,
-    ColumnName, Derive,
+    ColumnName, Derive, Empty,
 };
+
+pub fn sort<By>(by: By) -> Sorted<Empty, By> {
+    Sorted {
+        query: Empty,
+        sort: by,
+    }
+}
 
 /// The implementation of `PushPrql` must only push the expression that is being
 /// ordered by. It must not push the order itself.
@@ -119,6 +126,10 @@ pub struct Sorted<Query, Sort> {
 }
 
 impl<Query, Sort> Sorted<Query, Sort> {
+    pub fn sort<Sort2>(&self, sort: Sort2) -> Sorted<&Self, Sort2> {
+        Sorted { query: self, sort }
+    }
+
     pub fn take(&self, n: usize) -> Taken<&Self> {
         Taken { query: self, n }
     }

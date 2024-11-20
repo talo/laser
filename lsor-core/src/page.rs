@@ -170,7 +170,7 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{driver::Driver, from::from, table::table};
+    use crate::{driver::Driver, from::from, sort, table::table, Empty};
 
     #[test]
     fn test_select_page_info() {
@@ -217,6 +217,33 @@ mod test {
             select_page_info.push_to_driver(&mut driver);
         }
         assert_eq!(driver.sql(), "WITH table_2 AS (SELECT *, created_at AS cursor FROM page), table_1 AS (SELECT * FROM table_2 WHERE cursor < $1 AND cursor > $2 ORDER BY cursor DESC LIMIT 10), table_0 AS (SELECT * FROM table_1 ORDER BY cursor LIMIT 5) SELECT * FROM table_0 ORDER BY cursor DESC");
+    }
+
+    #[test]
+    fn test_select_distinct_page_items() {
+        let mut driver = Driver::new();
+        {
+            let sort_by_name = sort(col("name").desc());
+            let sort_by_name_then_created_at = sort_by_name.sort(col("created_at").desc());
+            let query = from(table("page"))
+                .group(col("name"), sort_by_name_then_created_at.take(1))
+                .sort(col("name").desc());
+            let cursor = Cursor::String;
+            let after = Some("after".to_string());
+            let before = Some("before".to_string());
+            let select_page_info = SelectPageItems {
+                query,
+                pagination: Pagination {
+                    cursor,
+                    after,
+                    before,
+                    first: 10,
+                    last: 5,
+                },
+            };
+            select_page_info.push_to_driver(&mut driver);
+        }
+        assert_eq!(driver.sql(), "WITH table_2 AS (SELECT DISTINCT ON (name) * FROM page ORDER BY name, created_at DESC), table_1 AS (SELECT * FROM table_2 WHERE name < $1 AND name > $2 ORDER BY name DESC LIMIT 10), table_0 AS (SELECT * FROM table_1 ORDER BY name LIMIT 5) SELECT * FROM table_0 ORDER BY name DESC");
     }
 
     #[test]

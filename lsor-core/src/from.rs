@@ -6,6 +6,7 @@ use crate::{
     sort::Sorted,
     table::TableName,
     take::Taken,
+    Group,
 };
 
 pub fn from(table: TableName) -> From {
@@ -21,6 +22,18 @@ impl From {
         Filtered {
             query: self,
             filter,
+        }
+    }
+
+    pub fn group<Expr, Pipeline>(
+        self,
+        expr: Expr,
+        pipeline: Pipeline,
+    ) -> Group<Self, Expr, Pipeline> {
+        Group {
+            query: self,
+            expr,
+            pipeline,
         }
     }
 
